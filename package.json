@@ -1,0 +1,24 @@
+{
+  "name": "surelia-cli",
+  "version": "0.0.1",
+  "description": "Surelia Command Line Interface",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "qmail",
+    "maildir",
+    "email"
+  ],
+  "author": "Mohammad Anwari <mdamt@mdamt.net>",
+  "license": "MIT",
+  "preferGlobal": "true",
+  "bin": {
+    "surelia": "index.js"
+  },
+  "dependencies": {
+    "lodash": "^2.4.1",
+    "minimist": "^0.2.0"
+  }
+}
