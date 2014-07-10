@@ -4,6 +4,7 @@ var config = require("./config");
 var userCommands = require("./user");
 
 var queue = schema.CommandQueue;
+var user = schema.User;
 
 mongoose.connect(config.db)
 
@@ -49,8 +50,15 @@ var creationWorker = function() {
         var result = userCommands.addUser([entry.args.domain, entry.args.username]);
         var output = null;
         ending(result, output, function() {
-          console.log("done");
-          working = false;
+          user.update({pendingTransaction: entry._id}, {
+            $set: {
+              pendingTransaction: "000000000000000000000000" 
+            }
+          }, function(err, result) {
+            console.log(err);
+            console.log("done");
+            working = false;
+          });
         });
       });
     } else {
