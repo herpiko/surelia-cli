@@ -10,8 +10,27 @@ SureliaError.invalidArgument = function(message) {
     name: "invalidArgument",
     message: message
   });
-  throw e;
+  return e;
 }
+
+SureliaError.internalError = function(message) {
+  var e = new SureliaError({
+    name: "internalError",
+    message: message
+  });
+  return e;
+}
+
+SureliaError.invalidData = function(message) {
+  var e = new SureliaError({
+    name: "invalidData",
+    message: message
+  });
+  return e;
+}
+
+
+
 SureliaError.prototype = new Error();
 
 module.exports = SureliaError;

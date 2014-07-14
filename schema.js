@@ -1,4 +1,5 @@
 var mongoose = require ("mongoose");
+var bcrypt = require ("nan-bcrypt"); 
 
 var Schema = mongoose.Schema;
 
@@ -26,6 +27,7 @@ var UserSchema = new Schema({
   modified : { type : Date },
   quota : { type : Number },
   secret : { type : String }, 
+  hash : { type : String }, 
   profile : { type : Object },
   roles : [ { type : String } ],
   state : { type : String },
@@ -38,6 +40,30 @@ var UserSchema = new Schema({
   }]
 });
 
+UserSchema.method("setPassword", function (password, next) {
+  var self = this;
+  bcrypt.genSalt(10, function (err, salt) {
+    if (err) return next(err)
+    bcrypt.hash(password, salt, /*function(){},*/ function (err, hash) {
+      if (err) return next(err)
+      next(hash)
+    })
+  })
+  return this;
+});
+
+UserSchema.method("auth", function (password, next) {
+  var self = this;
+  bcrypt.compare(password, self.toJSON().hash, function(err, authenticated) {
+    if (err) {
+      return next(err);
+    }
+    return next(authenticated);
+  });
+  return this;
+});
+
+
 try {
     User = mongoose.model ("User");
 }
@@ -45,8 +71,30 @@ catch (err) {
     User = mongoose.model ("User", UserSchema);
 }
 
+
+var DomainSchema = new Schema({
+  name: { type : String },
+  state : { type : String },
+  creator: { type : Schema.Types.ObjectId, default: Schema.Types.ObjectId },
+  createdDate : { type : Date },
+  pendingTransaction : { type : Schema.Types.ObjectId, default: Schema.Types.ObjectId },
+  log : [{
+        type : Schema.Types.ObjectId,
+  }]
+});
+
+try {
+    Domain = mongoose.model ("Domain");
+}
+catch (err) {
+    Domain = mongoose.model ("Domain", DomainSchema);
+}
+
+
+
 module.exports = {
   CommandQueue: CommandQueue,
-  User: User
+  User: User,
+  Domain: Domain
 }
 
