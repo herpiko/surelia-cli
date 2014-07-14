@@ -19,7 +19,7 @@ User.prototype.addUser = function(args) {
     return SureliaError.invalidArgument("Must specify host and user.");
   }
 
-  var dir = [config.home, config.maildir, user + "@" +host];
+  var dir = [config.home, config.maildir, host, user + "@" +host];
   var dirs = dir.join("/").split("/");
   var d = "";
   for (var i = 0; i < dirs.length; i ++) {
