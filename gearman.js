@@ -23,3 +23,18 @@ worker.addFunction("setPassword", function(job) {
     job.workComplete(JSON.stringify({result: false, error: e}));
   }
 });
+
+worker.addFunction("profile", function(job) {
+  var payload = JSON.parse(job.payload.toString());
+  try {
+    user.profile([payload.username], function(result){
+      if (result instanceof SureliaError) {
+        return job.workComplete(JSON.stringify({result: false, error: result}));
+      }
+      console.log(result);
+      job.workComplete(JSON.stringify({result: result}));
+    });
+  } catch (e) {
+    job.workComplete(JSON.stringify({result: false, error: e}));
+  }
+});

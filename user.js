@@ -3,6 +3,7 @@ var Base = require("./base");
 var config = require("./config");
 var fs = require("fs");
 var schema = require("./schema");
+var bknScrapper = require("bkn-scrapper");
 var user = schema.User;
 var domainModel = schema.Domain;
 
@@ -106,4 +107,86 @@ User.prototype.setPassword = function(args, cb) {
   });
 }
 
+User.prototype.profile = function(args, cb) {
+  var username = args[0];
+  var domain;
+
+  if (!(username)) {
+    return cb(SureliaError.invalidArgument("Must specify username."));
+  }
+
+  var u = username.split("@");
+  if (u.length != 2) {
+    return cb(SureliaError.invalidArgument("Incorrect username"));
+  }
+
+  username = u[0];
+  domain = u[1];
+
+  if (!(username && domain)) {
+    return cb(SureliaError.invalidArgument("Must specify username and domain."));
+  }
+
+  var findDomain = function(domain, cb) {
+    domainModel.findOne({name: domain}, function(err, domainData) {
+      if (err) {
+        return cb(SureliaError.internalError(err));
+      }
+      if (domainData == null) {
+        return cb(SureliaError.invalidArgument("Unknown domain"));
+      }
+      cb(domainData._id);
+    });
+  };
+
+  var findUser = function(username, domain, cb) {
+    findDomain(domain, function(domainId) {
+      user.findOne({username: username, domain: domainId}).exec(function(err, doc) {
+        if (err) {
+          return cb(SureliaError.internalError(err));
+        }
+        cb(doc);
+      });
+    });
+  }
+
+  findUser(username, domain, function(doc) {
+    if (doc) {
+      if (doc.profile && 
+        doc.profile.id && 
+        doc.profile.name &&
+        doc.profile.organization) {
+        return cb(doc.profile);
+      } else if (doc.profile && 
+        doc.profile.id) {
+        var bkn = new bknScrapper();
+        bkn.getData(doc.profile.id, function(data) {
+          var profile = {
+            id: data.NIP,
+            name: data.Nama,
+            title: data.Jabatan,
+            class: data["Golongan Ruang (TMT)"],
+            organization: data["Instansi Kerja"],
+            state: data["Kedudukan PNS"],
+            oldId: data["NIP Lama"],
+            lastEducation: data["Pendidikan Terakhir"],
+            unit: data["Unit Kerja"],
+            parentUnit: data["Unit Kerja Induk"],
+          }
+
+          doc.update({$set: { profile: profile }}, function(err, saved) {
+            if (err) {
+              return cb(SureliaError.internalError(err));
+            }
+            return cb(profile);
+          });
+        });
+      } else { 
+        return cb("NO DATA");
+      }
+    } else {
+      return cb(false);
+    }
+  });
+}
 module.exports = new User();
