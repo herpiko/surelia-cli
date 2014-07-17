@@ -8,7 +8,7 @@ var sqlite3 = require("sqlite3");
 var os = require("os");
 
 mongoose.connect(config.db)
-var worker = gearmanode.worker({});
+var worker = gearmanode.worker({servers: config.gearmand});
 
 var stringifyDate = function(date) {
   return date.getFullYear() + "-" + 
