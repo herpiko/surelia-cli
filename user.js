@@ -189,4 +189,59 @@ User.prototype.profile = function(args, cb) {
     }
   });
 }
+
+/** 
+ * Update an alias of an address
+ * Input: {String[]} args Function arguments
+ *          args[0]: alias address
+ *          args[1]: source address, if source is empty then remove the alias
+ *
+ * HOME and MAILDIR are the home and maildir values in config.js respectively
+ *
+ * source is made of sourceUsername + @ + sourceDomain
+ * alias is made of aliasUsername + @ + aliasDomain
+ *
+ * This function makes symbolic links from source mailbox to alias mailbox
+ * source mailbox:
+ * /HOME/MAILDIR/sourceDomain/sourceUsername@sourceDomain 
+ * alias symlink:
+ * /HOME/MAILDIR/aliasDomain/aliasUsername@aliasDomain 
+ *
+ * If no source is specified, then we remove the alias symlink
+*/
+User.prototype.updateAlias = function(args, cb) {
+  var alias = args[0];
+  var source = args[1];
+  var domain;
+
+  var u = alias.split("@");
+  if (u.length != 2) {
+    return cb(SureliaError.invalidArgument("Incorrect alias"));
+  }
+
+  var aliasUsername = u[0];
+  var aliasDomain = u[1];
+
+  var aliasDir = [config.home, config.maildir, aliasDomain, aliasUsername + "@" + aliasDomain];
+
+  if (!source) {
+    // No source means deletion
+    fs.unlinkSync(aliasDir.join("/"));
+    return cb(null);
+  }
+
+  var u = source.split("@");
+  if (u.length != 2) {
+    return cb(SureliaError.invalidArgument("Incorrect source"));
+  }
+
+  var sourceUsername = u[0];
+  var sourceDomain = u[1];
+  var sourceDir = [config.home, config.maildir, sourceDomain, sourceUsername + "@" + sourceDomain];
+ 
+  fs.symlinkSync(sourceDir.join("/"), aliasDir.join("/"));
+
+  return cb(null);
+}
+
 module.exports = new User();
