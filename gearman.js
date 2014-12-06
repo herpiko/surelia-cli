@@ -227,3 +227,20 @@ worker.addFunction("profile", function(job) {
     job.workComplete(JSON.stringify({result: false, error: e}));
   }
 });
+
+worker.addFunction("updateAlias", function(job) {
+  var payload = JSON.parse(JSON.stringify(job.payload).toString());
+  var payload = JSON.parse(job.payload.toString());
+  console.log("updateAlias message = "+JSON.stringify(payload));
+  try {
+    user.updateAlias(payload.data.alias,payload.data.source, function(result){
+      if (result instanceof SureliaError) {
+        return job.workComplete(JSON.stringify({result: false, error: result}));
+      }
+      console.log(result);
+      job.workComplete(JSON.stringify({result: result}));
+    });
+  } catch (e) {
+    job.workComplete(JSON.stringify({result: false, error: e}));
+  }
+});
