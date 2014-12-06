@@ -229,18 +229,35 @@ worker.addFunction("profile", function(job) {
 });
 
 worker.addFunction("updateAlias", function(job) {
-  var payload = JSON.parse(JSON.stringify(job.payload).toString());
-  var payload = JSON.parse(job.payload.toString());
-  console.log("updateAlias message = "+JSON.stringify(payload));
+  var payload = {};
   try {
-    user.updateAlias(payload.data.alias,payload.data.source, function(result){
-      if (result instanceof SureliaError) {
-        return job.workComplete(JSON.stringify({result: false, error: result}));
+    payload = JSON.parse(job.payload.toString());
+    if (payload.data.source) {
+      try {
+        user.updateAlias([payload.data.alias,payload.data.source], function(result){
+          if (result instanceof SureliaError) {
+            return job.workComplete(JSON.stringify({result: false, error: result}));
+          }
+          job.workComplete(JSON.stringify({result: result}));
+        });
+      } catch (e) {
+        job.workComplete(JSON.stringify({result: false, error: e}));
       }
-      console.log(result);
-      job.workComplete(JSON.stringify({result: result}));
-    });
-  } catch (e) {
-    job.workComplete(JSON.stringify({result: false, error: e}));
+    } else if (!payload.data.source) {
+      try {
+        user.updateAlias([payload.data.alias,false], function(result){
+          if (result instanceof SureliaError) {
+            return job.workComplete(JSON.stringify({result: false, error: result}));
+          }
+          console.log("updateAlias message = "+JSON.stringify(payload));
+          job.workComplete(JSON.stringify({result: result}));
+        });
+      } catch (e) {
+        job.workComplete(JSON.stringify({result: false, error: e}));
+      }
+    }
+  } catch (err) {
+    job.workComplete(JSON.stringify({result: false, error: err}));
   }
+    
 });
