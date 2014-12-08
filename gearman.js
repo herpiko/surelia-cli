@@ -258,5 +258,7 @@ worker.addFunction("updateAlias", function(job) {
       }
       job.workComplete(JSON.stringify({result: result}));
     });
+  } else {
+    return job.workComplete(JSON.stringify({result: false}));
   }
 });
