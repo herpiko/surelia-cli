@@ -248,7 +248,7 @@ worker.addFunction("updateAlias", function(job) {
       }
       job.workComplete(JSON.stringify({result: result}));
     });
-  } else if (!payload.data.source) {
+  } else if (payload.data && !payload.data.source) {
     user.updateAlias([payload.data.alias,false], function(err, result){
       if (result instanceof SureliaError) {
         return job.workComplete(JSON.stringify({result: false, error: result}));
