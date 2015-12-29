@@ -6,6 +6,7 @@ var schema = require("./schema");
 var bknScrapper = require("bkn-scrapper");
 var user = schema.User;
 var domainModel = schema.Domain;
+var exec = require('child_process').exec;
 
 var User = function() {
   this.name = "user";
@@ -26,7 +27,7 @@ User.prototype.addUser = function(args) {
   var dir = [config.home, config.maildir, host, user + "@" +host];
   var dirs = dir.join("/").split("/");
   var d = "";
-  for (var i = 0; i < dirs.length; i ++) {
+  for (var i = 0; i < dirs.length -1; i ++) {
     d += "/" + dirs[i];
     try {
       fs.mkdirSync(d, 0700);
@@ -35,8 +36,10 @@ User.prototype.addUser = function(args) {
       console.log(e);
     }
   }
-
-  return true;
+  d += "/" + dirs[dirs.length - 1];
+  exec("maildirmake " + d, function () {
+    return true;
+  }); 
 }
 
 User.prototype.setPassword = function(args, cb) {
