@@ -274,7 +274,7 @@ worker.addFunction("saLearn", function(job) {
   }
   if (payload != null && payload.type && payload.username && payload.messageId) {
    console.log(payload);
-    var path = config.maildir + '/' + payload.username.split('@')[1] + '/' + payload.username;
+    var path = config.home + '/' + config.maildir + '/' + payload.username.split('@')[1] + '/' + payload.username;
     var spawn = require("child_process").spawn;
     var saLearn = spawn("./sa-learn.sh", [payload.type, payload.messageId, path]);
     var result = false;
