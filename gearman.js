@@ -10,11 +10,11 @@ mongoose.connect(config.db)
 var worker = gearmanode.worker({servers: config.gearmand});
 
 var stringifyDate = function(date) {
-  return date.getFullYear() + "-" + 
-    ((date.getMonth() + 1) < 10 ? "0" : "") + 
-    (date.getMonth() + 1) + "-" + 
-    (date.getDate() < 10 ? "0" : "") + 
-    date.getDate(); 
+  return date.getFullYear() + "-" +
+    ((date.getMonth() + 1) < 10 ? "0" : "") +
+    (date.getMonth() + 1) + "-" +
+    (date.getDate() < 10 ? "0" : "") +
+    date.getDate();
 }
 
 worker.addFunction("statProcessMailbox", function(job) {
@@ -22,7 +22,7 @@ worker.addFunction("statProcessMailbox", function(job) {
       mta = spawn("pidof", ["qmail-send"]),
       imap = spawn("pidof", ["dovecot"]),
       smtp = spawn("pidof", ["tcpserver"]);
-  
+
   var states = {};
 
   imap.on('close', function (code) {
@@ -156,6 +156,75 @@ worker.addFunction("statTopFailures", function(job) {
     });
   });
 });
+
+worker.addFunction("statIncomingCounter", function(job) {
+  var payload = {};
+  if (job.payload && job.payload.length > 0) {
+    payload = JSON.parse(job.payload.toString());
+  }
+  var startDate = new Date(), endDate = new Date(startDate);
+
+  startDate.setDate(1);
+  startDate.setMonth(0);
+
+  if (payload.startDate) {
+    startDate = new Date(payload.startDate);
+  }
+  if (payload.endDate) {
+    endDate = new Date(payload.endDate);
+  }
+
+  var db = new sqlite3.Database(config.stat);
+  var retval = [];
+
+  db.serialize(function() {
+    var start = stringifyDate(startDate);
+    var end = stringifyDate(endDate);
+
+    var query = "select count(1) count from stat where eto like '%@" + config.statDomain + "' and strftime('%Y-%m-%d', start) between '" + start + "' and '" + end + "' ";
+    console.log(query);
+    db.each(query, function(err, row) {
+      db.close();
+      job.workComplete(JSON.stringify({result: row}));
+    });
+  });
+});
+
+worker.addFunction("statOutgoingCounter", function(job) {
+  var payload = {};
+  if (job.payload && job.payload.length > 0) {
+    payload = JSON.parse(job.payload.toString());
+  }
+  var startDate = new Date(), endDate = new Date(startDate);
+
+  startDate.setDate(1);
+  startDate.setMonth(0);
+
+  if (payload.startDate) {
+    startDate = new Date(payload.startDate);
+  }
+  if (payload.endDate) {
+    endDate = new Date(payload.endDate);
+  }
+
+  var db = new sqlite3.Database(config.stat);
+  var retval = [];
+
+  db.serialize(function() {
+    var start = stringifyDate(startDate);
+    var end = stringifyDate(endDate);
+
+    var query = "select count(1) count from stat where efrom like '%@" + config.statDomain + "' and strftime('%Y-%m-%d', start) between '" + start + "' and '" + end + "' ";
+    console.log(query);
+    db.each(query, function(err, row) {
+      db.close();
+      job.workComplete(JSON.stringify({result: row}));
+    });
+  });
+});
+
+
+
 
 worker.addFunction("statTopRemoteFailures", function(job) {
   var payload = {};
