@@ -7,7 +7,7 @@ var config = {
   ],
   stat : "/home/mdamt/src/surelia-queue-stat/stat.db",
   statStripEmail : "sureliabox-pnsmail-",
-  statDomain: "domain.com"
+  statDomain: ["domain.com", "abc.com"]
 }
 
 module.exports = config;

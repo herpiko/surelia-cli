@@ -5,6 +5,7 @@ var gearmanode = require("gearmanode");
 var mongoose = require("mongoose");
 var sqlite3 = require("sqlite3");
 var os = require("os");
+var _ = require("lodash");
 
 mongoose.connect(config.db)
 var worker = gearmanode.worker({servers: config.gearmand});
@@ -157,6 +158,11 @@ worker.addFunction("statTopFailures", function(job) {
   });
 });
 
+/**
+ * @param startDate start date of the stat, default is 1st of January of the current year (optional)
+ * @param endDate start date of the stat, default is today (optional)
+ * @param domainName the name of the domain, default is the domain name set in config.statDomain, or if it is an array the first entry in that statDomain array. If the statDomain is an array and the provided domain is not in the array, it will reject the provided domain name and using the default domain name instead.
+ */
 worker.addFunction("statIncomingCounter", function(job) {
   var payload = {};
   if (job.payload && job.payload.length > 0) {
@@ -174,6 +180,22 @@ worker.addFunction("statIncomingCounter", function(job) {
     endDate = new Date(payload.endDate);
   }
 
+  var domainName;
+  // default values
+  if (Array.isArray(config.statDomain)) {
+    domainName = config.statDomain[0];
+  } else {
+    domainName = config.statDomain;
+  }
+
+  if (payload.domainName) {
+    if (Array.isArray(config.statDomain)) {
+      // check if it is specified in statDomain, otherwise reject it
+      if (_.contains(config.statDomain, payload.domainName)) {
+        domainName = payload.domainName;
+      } // else will use default value
+    } // else will use default value
+  }
   var db = new sqlite3.Database(config.stat);
   var retval = [];
 
@@ -181,7 +203,7 @@ worker.addFunction("statIncomingCounter", function(job) {
     var start = stringifyDate(startDate);
     var end = stringifyDate(endDate);
 
-    var query = "select count(1) count from stat where eto like '%@" + config.statDomain + "' and strftime('%Y-%m-%d', start) between '" + start + "' and '" + end + "' ";
+    var query = "select count(1) count from stat where eto like '%@" + domainName + "' and strftime('%Y-%m-%d', start) between '" + start + "' and '" + end + "' ";
     console.log(query);
     db.each(query, function(err, row) {
       db.close();
@@ -190,6 +212,11 @@ worker.addFunction("statIncomingCounter", function(job) {
   });
 });
 
+/**
+ * @param startDate start date of the stat, default is 1st of January of the current year (optional)
+ * @param endDate start date of the stat, default is today (optional)
+ * @param domainName the name of the domain, default is the domain name set in config.statDomain, or if it is an array the first entry in that statDomain array. If the statDomain is an array and the provided domain is not in the array, it will reject the provided domain name and using the default domain name instead.
+ */
 worker.addFunction("statOutgoingCounter", function(job) {
   var payload = {};
   if (job.payload && job.payload.length > 0) {
@@ -206,6 +233,22 @@ worker.addFunction("statOutgoingCounter", function(job) {
   if (payload.endDate) {
     endDate = new Date(payload.endDate);
   }
+  var domainName;
+  // default values
+  if (Array.isArray(config.statDomain)) {
+    domainName = config.statDomain[0];
+  } else {
+    domainName = config.statDomain;
+  }
+
+  if (payload.domainName) {
+    if (Array.isArray(config.statDomain)) {
+      // check if it is specified in statDomain, otherwise reject it
+      if (_.contains(config.statDomain, payload.domainName)) {
+        domainName = payload.domainName;
+      } // else will use default value
+    } // else will use default value
+  }
 
   var db = new sqlite3.Database(config.stat);
   var retval = [];
@@ -214,7 +257,7 @@ worker.addFunction("statOutgoingCounter", function(job) {
     var start = stringifyDate(startDate);
     var end = stringifyDate(endDate);
 
-    var query = "select count(1) count from stat where efrom like '%@" + config.statDomain + "' and strftime('%Y-%m-%d', start) between '" + start + "' and '" + end + "' ";
+    var query = "select count(1) count from stat where efrom like '%@" + domainName + "' and strftime('%Y-%m-%d', start) between '" + start + "' and '" + end + "' ";
     console.log(query);
     db.each(query, function(err, row) {
       db.close();
