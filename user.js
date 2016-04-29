@@ -317,9 +317,9 @@ User.prototype.resetPassword = function(args, cb) {
           var transporter = nodemailer.createTransport(config.smtpTransport);
           var mailOptions = {
             from: '"Administrator PNSMail" <no-reply@pnsmail.go.id>',
-            to: doc.profile.email + ', ' + username + '@' + domain,
+            to: doc.profile.email,
             subject: 'Sandi Anda telah diganti',
-            text: 'Sandi Anda telah diganti menjadi\n\n   ' + newPassword + '\n\nSetelah login, silakan langsung ganti sandi ini.\nTerima kasih,\nAdministrator PNSMail'
+            text: 'Sandi akun ' + username + '@' + domain +' telah diganti menjadi\n\n   ' + newPassword + '\n\nSetelah login, silakan langsung ganti sandi ini.\nTerima kasih,\nAdministrator PNSMail'
           };
 
           // Don't wait for it to be sent
