@@ -7,6 +7,8 @@ var bknScrapper = require("bkn-scrapper");
 var user = schema.User;
 var domainModel = schema.Domain;
 var exec = require('child_process').exec;
+var genPass = require('generate-password');
+var nodemailer = require('nodemailer');
 
 var User = function() {
   this.name = "user";
@@ -14,8 +16,8 @@ var User = function() {
 
 User.prototype = new Base();
 User.prototype.help = {};
-User.prototype.help.addUser = 
-  "host user\n\tAdds a new user 'user' in 'host' domain"; 
+User.prototype.help.addUser =
+  "host user\n\tAdds a new user 'user' in 'host' domain";
 
 User.prototype.addUser = function(args) {
   var host = args[0];
@@ -101,7 +103,9 @@ User.prototype.setPassword = function(args, cb) {
             if (err) {
               return cb(SureliaError.internalError(err));
             }
+
             return cb(saved == 1);
+
           });
         });
       });
@@ -156,12 +160,12 @@ User.prototype.profile = function(args, cb) {
 
   findUser(username, domain, function(doc) {
     if (doc) {
-      if (doc.profile && 
-        doc.profile.id && 
+      if (doc.profile &&
+        doc.profile.id &&
         doc.profile.name &&
         doc.profile.organization) {
         return cb(doc.profile);
-      } else if (doc.profile && 
+      } else if (doc.profile &&
         doc.profile.id) {
         var bkn = new bknScrapper();
         bkn.getData(doc.profile.id, function(data) {
@@ -185,7 +189,7 @@ User.prototype.profile = function(args, cb) {
             return cb(profile);
           });
         });
-      } else { 
+      } else {
         return cb("NO DATA");
       }
     } else {
@@ -194,7 +198,7 @@ User.prototype.profile = function(args, cb) {
   });
 }
 
-/** 
+/**
  * Update an alias of an address
  * Input: {String[]} args Function arguments
  *          args[0]: alias address
@@ -207,9 +211,9 @@ User.prototype.profile = function(args, cb) {
  *
  * This function makes symbolic links from source mailbox to alias mailbox
  * source mailbox:
- * /HOME/MAILDIR/sourceDomain/sourceUsername@sourceDomain 
+ * /HOME/MAILDIR/sourceDomain/sourceUsername@sourceDomain
  * alias symlink:
- * /HOME/MAILDIR/aliasDomain/aliasUsername@aliasDomain 
+ * /HOME/MAILDIR/aliasDomain/aliasUsername@aliasDomain
  *
  * If no source is specified, then we remove the alias symlink
 */
@@ -242,10 +246,98 @@ User.prototype.updateAlias = function(args, cb) {
   var sourceUsername = u[0];
   var sourceDomain = u[1];
   var sourceDir = [config.home, config.maildir, sourceDomain, sourceUsername + "@" + sourceDomain];
- 
+
   fs.symlinkSync(sourceDir.join("/"), aliasDir.join("/"));
 
   return cb(null);
 }
+
+User.prototype.resetPassword = function(args, cb) {
+  var username = args[0];
+  var domain;
+  var newPassword = genPass.generate({
+      length: 15,
+      excludeSimilarCharacters: true,
+      numbers: true
+  });
+
+  if (!(username)) {
+    return cb(SureliaError.invalidArgument("Must specify username."));
+  }
+
+  var u = username.split("@");
+  if (u.length != 2) {
+    return cb(SureliaError.invalidArgument("Incorrect username"));
+  }
+
+  username = u[0];
+  domain = u[1];
+
+  if (!(username && domain)) {
+    return cb(SureliaError.invalidArgument("Must specify username and domain."));
+  }
+
+  var findDomain = function(domain, cb) {
+    domainModel.findOne({name: domain}, function(err, domainData) {
+      if (err) {
+        return cb(SureliaError.internalError(err));
+      }
+      if (domainData == null) {
+        return cb(SureliaError.invalidArgument("Unknown domain"));
+      }
+      cb(domainData._id);
+    });
+  };
+
+  var findUser = function(username, domain, cb) {
+    findDomain(domain, function(domainId) {
+      user.findOne({username: username, domain: domainId}).exec(function(err, doc) {
+        if (err) {
+          return cb(SureliaError.internalError(err));
+        }
+
+        if (doc.profile && doc.profile.email) {
+          cb(doc);
+        } else {
+          return cb(null);
+        }
+      });
+    });
+  }
+
+  findUser(username, domain, function(doc) {
+    if (doc) {
+      var id = doc._id;
+      doc.setPassword(newPassword, function(hash) {
+        doc.update({$set: {hash: hash}}, function(err, saved) {
+          if (err) {
+            return cb(SureliaError.internalError(err));
+          }
+
+          var transporter = nodemailer.createTransport(config.smtpTransport);
+          var mailOptions = {
+            from: '"Administrator PNSMail" <no-reply@pnsmail.go.id>',
+            to: doc.profile.email + ', ' + username + '@' + domain,
+            subject: 'Sandi Anda telah diganti',
+            text: 'Sandi Anda telah diganti menjadi\n\n   ' + newPassword + '\n\nSetelah login, silakan langsung ganti sandi ini.\nTerima kasih,\nAdministrator PNSMail'
+          };
+
+          // Don't wait for it to be sent
+          transporter.sendMail(mailOptions, function(error, info){
+            if(error){
+              return console.log(error);
+            }
+            console.log('Message sent: ', mailOptions, info.response);
+          });
+
+          return cb(saved == 1);
+        });
+      });
+    } else {
+      return cb(false);
+    }
+  });
+}
+
 
 module.exports = new User();

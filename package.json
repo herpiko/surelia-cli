@@ -18,13 +18,15 @@
     "surelia": "index.js"
   },
   "dependencies": {
+    "bcrypt": "^0.8.6",
     "bkn-scrapper": "0.0.2",
     "gearmanode": "^0.1.6",
+    "generate-password": "^1.1.1",
     "lodash": "^2.4.1",
     "minimist": "^0.2.0",
     "mongoose": "^3.8.12",
-    "nan-bcrypt": "^0.7.9",
+    "nodemailer": "^2.3.2",
     "request": "^2.37.0",
-    "sqlite3": "^2.2.4"
+    "sqlite3": "^3.1.3"
   }
 }
