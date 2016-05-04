@@ -1,5 +1,5 @@
 var mongoose = require ("mongoose");
-var bcrypt = require ("nan-bcrypt"); 
+var bcrypt = require ("bcrypt");
 
 var Schema = mongoose.Schema;
 
@@ -26,8 +26,8 @@ var UserSchema = new Schema({
   created : { type : Date },
   modified : { type : Date },
   quota : { type : Number },
-  secret : { type : String }, 
-  hash : { type : String }, 
+  secret : { type : String },
+  hash : { type : String },
   profile : { type : Object },
   roles : [ { type : String } ],
   state : { type : String },
