@@ -306,8 +306,9 @@ User.prototype.resetPassword = function(args, cb) {
     });
   }
 
+  console.log('Reset password for username : ' + username + ' at ' + domain);
   findUser(username, domain, function(doc) {
-    if (doc) {
+    if (doc && !(doc instanceof SureliaError)) {
       var id = doc._id;
       doc.setPassword(newPassword, function(hash) {
         doc.update({$set: {hash: hash}}, function(err, saved) {
