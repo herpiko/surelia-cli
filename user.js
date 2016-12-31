@@ -90,8 +90,9 @@ User.prototype.setPassword = function(args, cb) {
     });
   }
 
+  console.log('Changing password for username : ' + username + ' at ' + domain);
   findUser(username, domain, function(doc) {
-    if (doc) {
+    if (doc && !(doc instanceof SureliaError)) {
       doc.auth(oldPassword, function(ok) {
         if (ok != true) {
           return cb(SureliaError.invalidData("oldPassword"));
