@@ -319,7 +319,8 @@ worker.addFunction("setPassword", function(job) {
       job.workComplete(JSON.stringify({result: result}));
     });
   } catch (e) {
-    console.log("x");
+    console.log("job failed");
+    console.log(e);
     job.workComplete(JSON.stringify({result: false, error: e}));
   }
 });
@@ -337,7 +338,8 @@ worker.addFunction("resetPassword", function(job) {
       job.workComplete(JSON.stringify({result: result}));
     });
   } catch (e) {
-    console.log("x");
+    console.log("job failed");
+    console.log(e);
     job.workComplete(JSON.stringify({result: false, error: e}));
   }
 });
